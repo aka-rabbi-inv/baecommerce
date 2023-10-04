@@ -28,6 +28,24 @@ class CustomUserRegistrationRelay(relay.ClientIDMutation):
         return CustomUserRegistrationRelay(user=user)
 
 
+class MeUpdateRelay(relay.ClientIDMutation):
+    class Input:
+        username = graphene.String()
+        password = graphene.String()
+        email = graphene.String()
+
+    user = graphene.Field(CustomUserNode)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, **kwargs):
+        user = info.context.user
+        user.username = kwargs.get("username", user.username)
+        user.password = kwargs.get("password", user.password)
+        user.email = kwargs.get("email", user.email)
+        user.save()
+        return MeUpdateRelay(user=user)
+
+
 class Query(graphene.ObjectType):
     all_users = DjangoFilterConnectionField(CustomUserNode)
     me_query = graphene.Field(CustomUserNode)
@@ -41,3 +59,4 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     register = CustomUserRegistrationRelay.Field()
+    me_update = MeUpdateRelay.Field()

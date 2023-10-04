@@ -139,6 +139,7 @@ class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
 class Query(graphene.ObjectType):
     product = relay.Node.Field(ProductNode)
     all_products = DjangoFilterConnectionField(ProductNode)
+    category = relay.Node.Field(CategoryNode)
     all_categories = DjangoFilterConnectionField(CategoryNode)
     all_carts = DjangoFilterConnectionField(CartNode)
     all_cart_items = DjangoFilterConnectionField(CartItemNode)

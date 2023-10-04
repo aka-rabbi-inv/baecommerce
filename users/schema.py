@@ -30,6 +30,13 @@ class CustomUserRegistrationRelay(relay.ClientIDMutation):
 
 class Query(graphene.ObjectType):
     all_users = DjangoFilterConnectionField(CustomUserNode)
+    me_query = graphene.Field(CustomUserNode)
+
+    def resolve_me_query(self, info):
+        user = info.context.user
+        if user.is_authenticated:
+            return user
+        return None
 
 
 class Mutation(graphene.ObjectType):

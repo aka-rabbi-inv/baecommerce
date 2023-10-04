@@ -66,11 +66,11 @@ class ProductCreateMutaionRelay(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, category_id, **kwargs):
-        product = Product.objects.create(**kwargs)
-
         if category_id:
             category = Category.objects.get(pk=from_global_id(category_id)[1])
-            product.category = category
+        product = Product.objects.create(**kwargs)
+
+        product.category = category if category_id else None
         product.save()
         return ProductCreateMutaionRelay(product=product)
 
@@ -137,6 +137,7 @@ class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
+    product = relay.Node.Field(ProductNode)
     all_products = DjangoFilterConnectionField(ProductNode)
     all_categories = DjangoFilterConnectionField(CategoryNode)
     all_carts = DjangoFilterConnectionField(CartNode)

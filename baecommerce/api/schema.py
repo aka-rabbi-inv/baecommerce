@@ -1,10 +1,28 @@
 import graphene
 from graphene import relay
 from graphene_django.types import DjangoObjectType
-from .models import Product, Category
+from .models import Product, Category, CartItem, Cart
 import graphql_jwt
 from graphene_django.filter import DjangoFilterConnectionField
 from graphql_relay import from_global_id
+
+
+class CartNode(DjangoObjectType):
+    class Meta:
+        model = Cart
+        filter_fields = {
+            "status": [
+                "exact",
+            ],
+        }
+        interfaces = (relay.Node,)
+
+
+class CartItemNode(DjangoObjectType):
+    class Meta:
+        model = CartItem
+        filter_fields = {}
+        interfaces = (relay.Node,)
 
 
 class CategoryNode(DjangoObjectType):
@@ -101,9 +119,48 @@ class ProductDeleteMutaionRelay(relay.ClientIDMutation):
         return ProductDeleteMutaionRelay(product=None)
 
 
+class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
+    class Input:
+        status = graphene.Int(required=True)
+        id = graphene.ID(required=True)
+
+    cart = graphene.Field(CartNode)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, status):
+        cart = Cart.objects.get(pk=from_global_id(id)[1])
+
+        cart.status = status
+        cart.save()
+
+        return CartStatusUpdateMutaionRelay(cart=cart)
+
+
 class Query(graphene.ObjectType):
     all_products = DjangoFilterConnectionField(ProductNode)
     all_categories = DjangoFilterConnectionField(CategoryNode)
+    all_carts = DjangoFilterConnectionField(CartNode)
+    all_cart_items = DjangoFilterConnectionField(CartItemNode)
+
+    my_cart_items = graphene.List(CartItemNode)
+    my_cart = graphene.Field(CartNode)
+
+    def resolve_my_cart(self, info):
+        user = info.context.user
+        if user.is_authenticated:
+            cart = Cart.objects.filter(user=user, status=0).first()
+            if not cart:
+                cart = Cart.objects.create(user=user, status=0)
+            return cart
+        return None
+
+    def resolve_my_cart_items(self, info):
+        user = info.context.user
+        if user.is_authenticated:
+            cart = Cart.objects.filter(user=user, status=0).first()
+            cart_items = CartItem.objects.filter(cart=cart).all()
+            return cart_items
+        return None
 
 
 class Mutation:
@@ -113,3 +170,5 @@ class Mutation:
     create_product = ProductCreateMutaionRelay.Field()
     update_product = ProductUpdateMutaionRelay.Field()
     delete_product = ProductDeleteMutaionRelay.Field()
+
+    update_cart_status = CartStatusUpdateMutaionRelay.Field()

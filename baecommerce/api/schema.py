@@ -8,6 +8,12 @@ from graphql_relay import from_global_id
 from enum import Enum
 
 
+class CartStatus(Enum):
+    ACTIVE = 0
+    INACTIVE = 1
+    ARCHIVED = 2
+
+
 class OrderStatus(Enum):
     PENDING = 0
     CHECKOUT = 1
@@ -170,6 +176,8 @@ class CheckoutRelay(relay.ClientIDMutation):
         order = Order.objects.get(pk=from_global_id(id)[1])
 
         order.status = OrderStatus.CHECKOUT.value
+        order.cart.status = CartStatus.ARCHIVED.value
+        order.cart.save()
         order.save()
 
         return CheckoutRelay(order=order)

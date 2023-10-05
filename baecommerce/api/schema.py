@@ -1,10 +1,18 @@
 import graphene
 from graphene import relay
 from graphene_django.types import DjangoObjectType
-from .models import Product, Category, CartItem, Cart
+from .models import Product, Category, CartItem, Cart, Order
 import graphql_jwt
 from graphene_django.filter import DjangoFilterConnectionField
 from graphql_relay import from_global_id
+from enum import Enum
+
+
+class OrderStatus(Enum):
+    PENDING = 0
+    CHECKOUT = 1
+    SHIPPED = 2
+    DELIVERED = 3
 
 
 class CartNode(DjangoObjectType):
@@ -22,6 +30,21 @@ class CartItemNode(DjangoObjectType):
     class Meta:
         model = CartItem
         filter_fields = {}
+        interfaces = (relay.Node,)
+
+
+class OrderNode(DjangoObjectType):
+    class Meta:
+        model = Order
+        filter_fields = {
+            "status": [
+                "exact",
+            ],
+            "total": [
+                "gt",
+                "lt",
+            ],
+        }
         interfaces = (relay.Node,)
 
 
@@ -136,6 +159,39 @@ class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
         return CartStatusUpdateMutaionRelay(cart=cart)
 
 
+class CheckoutRelay(relay.ClientIDMutation):
+    class Input:
+        id = graphene.ID(required=True)
+
+    order = graphene.Field(OrderNode)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id):
+        order = Order.objects.get(pk=from_global_id(id)[1])
+
+        order.status = OrderStatus.CHECKOUT.value
+        order.save()
+
+        return CheckoutRelay(order=order)
+
+
+class OrderStatusUpdateRelay(relay.ClientIDMutation):
+    class Input:
+        id = graphene.ID(required=True)
+        status = graphene.Int(required=True)
+
+    order = graphene.Field(OrderNode)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, status):
+        order = Order.objects.get(pk=from_global_id(id)[1])
+
+        order.status = status
+        order.save()
+
+        return OrderStatusUpdateRelay(order=order)
+
+
 class Query(graphene.ObjectType):
     product = relay.Node.Field(ProductNode)
     all_products = DjangoFilterConnectionField(ProductNode)
@@ -143,9 +199,11 @@ class Query(graphene.ObjectType):
     all_categories = DjangoFilterConnectionField(CategoryNode)
     all_carts = DjangoFilterConnectionField(CartNode)
     all_cart_items = DjangoFilterConnectionField(CartItemNode)
+    all_orders = DjangoFilterConnectionField(OrderNode)
 
     my_cart_items = graphene.List(CartItemNode)
     my_cart = graphene.Field(CartNode)
+    my_orders = graphene.List(OrderNode)
 
     def resolve_my_cart(self, info):
         user = info.context.user
@@ -164,6 +222,13 @@ class Query(graphene.ObjectType):
             return cart_items
         return None
 
+    def resolve_my_orders(self, info):
+        user = info.context.user
+        if user.is_authenticated:
+            orders = Order.objects.filter(cart__user=user)
+            return orders
+        return None
+
 
 class Mutation:
     token_auth = graphql_jwt.ObtainJSONWebToken.Field()
@@ -174,3 +239,6 @@ class Mutation:
     delete_product = ProductDeleteMutaionRelay.Field()
 
     update_cart_status = CartStatusUpdateMutaionRelay.Field()
+
+    update_order_status = OrderStatusUpdateRelay.Field()
+    checkout_order = CheckoutRelay.Field()

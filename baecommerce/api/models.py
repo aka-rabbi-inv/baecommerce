@@ -36,3 +36,15 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+
+
+class Order(models.Model):
+    cart = models.ForeignKey(Cart, related_name="orders", on_delete=models.CASCADE)
+    total = models.FloatField(default=0)
+    status = models.IntegerField(default=0)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()

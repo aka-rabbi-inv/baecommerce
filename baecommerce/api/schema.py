@@ -77,7 +77,7 @@ class ProductNode(DjangoObjectType):
         interfaces = (relay.Node,)
 
 
-class ProductCreateMutaionRelay(relay.ClientIDMutation):
+class ProductCreateRelay(relay.ClientIDMutation):
     class Input:
         title = graphene.String(required=True)
         price = graphene.Float(required=True)
@@ -95,10 +95,10 @@ class ProductCreateMutaionRelay(relay.ClientIDMutation):
 
         product.category = category if category_id else None
         product.save()
-        return ProductCreateMutaionRelay(product=product)
+        return ProductCreateRelay(product=product)
 
 
-class ProductUpdateMutaionRelay(relay.ClientIDMutation):
+class ProductUpdateRelay(relay.ClientIDMutation):
     class Input:
         title = graphene.String()
         price = graphene.Float()
@@ -126,10 +126,10 @@ class ProductUpdateMutaionRelay(relay.ClientIDMutation):
             product.category = category
 
         product.save()
-        return ProductUpdateMutaionRelay(product=product)
+        return ProductUpdateRelay(product=product)
 
 
-class ProductDeleteMutaionRelay(relay.ClientIDMutation):
+class ProductDeleteRelay(relay.ClientIDMutation):
     class Input:
         id = graphene.ID(required=True)
 
@@ -139,10 +139,10 @@ class ProductDeleteMutaionRelay(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, id):
         product = Product.objects.get(pk=from_global_id(id)[1])
         product.delete()
-        return ProductDeleteMutaionRelay(product=None)
+        return ProductDeleteRelay(product=None)
 
 
-class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
+class CartStatusUpdateRelay(relay.ClientIDMutation):
     class Input:
         status = graphene.Int(required=True)
         id = graphene.ID(required=True)
@@ -156,7 +156,7 @@ class CartStatusUpdateMutaionRelay(relay.ClientIDMutation):
         cart.status = status
         cart.save()
 
-        return CartStatusUpdateMutaionRelay(cart=cart)
+        return CartStatusUpdateRelay(cart=cart)
 
 
 class CheckoutRelay(relay.ClientIDMutation):
@@ -234,11 +234,11 @@ class Mutation:
     token_auth = graphql_jwt.ObtainJSONWebToken.Field()
     verify_token = graphql_jwt.Verify.Field()
 
-    create_product = ProductCreateMutaionRelay.Field()
-    update_product = ProductUpdateMutaionRelay.Field()
-    delete_product = ProductDeleteMutaionRelay.Field()
+    create_product = ProductCreateRelay.Field()
+    update_product = ProductUpdateRelay.Field()
+    delete_product = ProductDeleteRelay.Field()
 
-    update_cart_status = CartStatusUpdateMutaionRelay.Field()
+    update_cart_status = CartStatusUpdateRelay.Field()
 
     update_order_status = OrderStatusUpdateRelay.Field()
     checkout_order = CheckoutRelay.Field()

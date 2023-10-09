@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
     "django_filters",
+    "corsheaders",
     "baecommerce.api",
     "users",
 ]
@@ -71,11 +72,16 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000",
 ]
 
 ROOT_URLCONF = "baecommerce.urls"

@@ -19,6 +19,7 @@ class Product(models.Model):
     price = models.FloatField(default=2000, blank=False)
     description = models.TextField(blank=True)
     image = models.CharField(max_length=256, blank=True)
+    stock = models.IntegerField(default=0)
     category = models.ForeignKey(
         Category, on_delete=models.PROTECT, blank=True, null=True
     )
